@@ -1,4 +1,4 @@
-module githubcom/XIELongDragon/go-influx-qu
+module github.com/XIELongDragon/go-influx-qu
 
 go 1.18
 
