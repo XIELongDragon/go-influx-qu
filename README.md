@@ -6,7 +6,8 @@ A simple library converts structures to InfluxDB point and covert back from Infl
 2. Call `GenerateInfluxPoint` to conver your structure to InfluxDB points
 
 >**Note**
->if there i NO timestamp proived, will use current time as the point's timestamp
+>
+>if there i **NO timestamp tag** proived, will use current time as the point's timestamp
 
 ```go
 type Data struct {
