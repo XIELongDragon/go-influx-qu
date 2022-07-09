@@ -1,0 +1,87 @@
+run:
+  deadline: 10m
+  skip-dirs:
+    - vendor
+
+linters-settings:
+  govet:
+    check-shadowing: true
+  golint:
+    min-confidence: 0.8
+  gocyclo:
+    min-complexity: 20
+  dupl:
+    threshold: 30
+  goconst:
+    min-len: 2
+    min-occurrences: 2
+  misspell:
+    locale: EN
+  lll:
+    line-length: 140
+  goimports:
+    local-prefixes: githubcom/XIELongDragon/go-influx-qu/
+  gocritic:
+    enabled-tags:
+      - diagnostic
+      - performance
+      - style
+      - experimental
+    disabled-checks:
+      - paramTypeCombine
+  funlen:
+    lines: 100
+    statements: 85
+  wsl:
+    allow-cuddle-declarations: true
+
+linters: 
+  enable:
+    - bodyclose
+    - deadcode
+    - depguard
+    - dogsled
+    - dupl
+    - errcheck
+    - funlen
+    - gochecknoinits
+    - goconst
+    - gocritic
+    - gocyclo
+    - golint
+    - gosec
+    - gosimple
+    - govet
+    - ineffassign
+    - interfacer
+    - lll
+    - misspell
+    - maligned
+    - nakedret
+    - prealloc
+    - scopelint
+    - staticcheck
+    - structcheck
+    - stylecheck
+    - typecheck
+    - unconvert
+    - unparam
+    - unused
+    - varcheck
+    - wastedassign
+    - whitespace
+    - wsl
+  enable-all: false
+  fast: false
+issues:
+  exclude-rules:
+    - path: _test\.go
+      linters:
+        - dupl
+        - gosec
+        - funlen
+    - path: gocovmerge\.go
+      linters:
+        - gocyclo
+        - gocritic
+        - gosimple

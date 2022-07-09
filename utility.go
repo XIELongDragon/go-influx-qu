@@ -8,19 +8,23 @@ import (
 func getTypeInfo(i interface{}, val reflect.Value) (reflect.Type, reflect.Kind) {
 	var t reflect.Type
 	valKind := val.Kind()
+
 	if valKind == reflect.Slice {
 		if reflect.ValueOf(i).Kind() == reflect.Ptr {
 			t = reflect.TypeOf(i).Elem().Elem()
 		} else {
 			t = reflect.TypeOf(i).Elem()
 		}
+
 		if t.Kind() == reflect.Ptr {
 			t = t.Elem()
 		}
+
 		valKind = t.Kind()
 	} else {
 		t = val.Type()
 	}
+
 	return t, valKind
 }
 
@@ -35,7 +39,7 @@ func getFiledAsString(val reflect.Value, i int) (string, error) {
 		return "", &UnSupportedType{}
 	}
 
-	return f.Interface().(string), nil
+	return f.String(), nil
 }
 
 func getFiledAsTime(val reflect.Value, i int) (time.Time, error) {
@@ -45,9 +49,10 @@ func getFiledAsTime(val reflect.Value, i int) (time.Time, error) {
 		f = f.Elem()
 	}
 
-	if f.Kind() != reflect.Struct {
+	t, ok := f.Interface().(time.Time)
+	if !ok {
 		return time.Time{}, &UnSupportedType{}
 	}
 
-	return f.Interface().(time.Time), nil
+	return t, nil
 }
