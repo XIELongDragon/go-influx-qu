@@ -264,3 +264,56 @@ func Test_GenerateInfluxPoint_Omitempty(t *testing.T) {
 		t.Error(e)
 	}
 }
+
+func Test_GenerateInfluxPoint_Stringer(t *testing.T) {
+	type Data struct {
+		Base      int       `influxqu:"measurement"`
+		T1        string    `influxqu:"tag,t1"`
+		T2        string    `influxqu:"tag,t2"`
+		F1        int       `influxqu:"field,f1"`
+		F2        bool      `influxqu:"field,f2"`
+		Timestamp time.Time `influxqu:"timestamp"`
+	}
+
+	const (
+		tag1   = "t1"
+		tag2   = "t2"
+		field1 = "f1"
+		field2 = "f2"
+	)
+
+	g := NewinfluxQu()
+	data := Data{
+		Base:      1,
+		T1:        "t1",
+		T2:        "t2",
+		F1:        1,
+		F2:        true,
+		Timestamp: time.Now(),
+	}
+
+	p, e := g.GenerateInfluxPoint(&data)
+	if e != nil {
+		t.Error(e)
+	}
+
+	if p == nil {
+		t.Error("point is nil")
+	}
+
+	if p.Name() != "1" {
+		t.Error("point name is not base")
+	}
+
+	if p.Time() != data.Timestamp {
+		t.Error("point timestamp is not data.Timestamp")
+	}
+
+	if e := checkTags(p, map[string]string{tag1: data.T1, tag2: data.T2}); e != nil {
+		t.Error(e)
+	}
+
+	if e := checkFields(p, map[string]interface{}{field1: int64(data.F1), field2: data.F2}); e != nil {
+		t.Error(e)
+	}
+}

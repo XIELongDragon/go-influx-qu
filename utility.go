@@ -1,6 +1,8 @@
 package influxqu
 
 import (
+	"encoding"
+	"fmt"
 	"reflect"
 	"time"
 )
@@ -49,11 +51,35 @@ func getFiledAsString(val reflect.Value, i int) (string, error) {
 		f = f.Elem()
 	}
 
-	if f.Kind() != reflect.String {
-		return "", &UnSupportedType{}
+	if f.Kind() == reflect.String {
+		return f.String(), nil
 	}
 
-	return f.String(), nil
+	if s, ok := f.Interface().(fmt.Stringer); ok {
+		return s.String(), nil
+	}
+
+	if s, ok := f.Interface().(encoding.TextMarshaler); ok {
+		b, err := s.MarshalText()
+		if err != nil {
+			return "", err
+		}
+
+		return string(b), nil
+	}
+
+	switch v := f.Interface().(type) {
+	case int, int8, int16, int32, int64, uint, uint8, uint16, uint32, uint64:
+		return fmt.Sprintf("%d", v), nil
+	case float32, float64:
+		return fmt.Sprintf("%f", v), nil
+	case bool:
+		return fmt.Sprintf("%t", v), nil
+	case time.Time:
+		return v.Format(time.RFC3339Nano), nil
+	}
+
+	return "", &UnSupportedType{}
 }
 
 func getFiledAsTime(val reflect.Value, i int) (time.Time, error) {
