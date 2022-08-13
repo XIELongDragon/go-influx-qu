@@ -5,6 +5,20 @@ import (
 	"time"
 )
 
+func isValueEmpty(val interface{}) bool {
+	if val == nil {
+		return true
+	}
+
+	if reflect.TypeOf(val).Kind() == reflect.Ptr {
+		return reflect.ValueOf(val).IsNil()
+	}
+
+	v := reflect.ValueOf(val)
+
+	return v.IsValid() && v.IsZero()
+}
+
 func getTypeInfo(i interface{}, val reflect.Value) (reflect.Type, reflect.Kind) {
 	var t reflect.Type
 	valKind := val.Kind()

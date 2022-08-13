@@ -51,3 +51,9 @@ type DuplicatedKey struct{}
 func (e *DuplicatedKey) Error() string {
 	return "duplicated key"
 }
+
+type UnSupportedTag struct{}
+
+func (e *UnSupportedTag) Error() string {
+	return "unsupported tag"
+}

@@ -21,12 +21,12 @@ func checkTags(p *write.Point, targets map[string]string) error {
 	return nil
 }
 
-func checkFilds(p *write.Point, targets map[string]interface{}) error {
+func checkFields(p *write.Point, targets map[string]interface{}) error {
 	for _, v := range p.FieldList() {
 		if tv, ok := targets[v.Key]; !ok {
-			return fmt.Errorf("tag %s is not in target", v.Key)
+			return fmt.Errorf("field %s is not in target", v.Key)
 		} else if !reflect.DeepEqual(tv, v.Value) {
-			return fmt.Errorf("tag %s value is not %v, but %v", v.Key, tv, v.Value)
+			return fmt.Errorf("field %s value is not %v, but %v", v.Key, tv, v.Value)
 		}
 	}
 
@@ -81,7 +81,7 @@ func Test_GenerateInfluxPoint_Simple_Struct(t *testing.T) {
 		t.Error(e)
 	}
 
-	if e := checkFilds(p, map[string]interface{}{field1: int64(data.F1), field2: data.F2}); e != nil {
+	if e := checkFields(p, map[string]interface{}{field1: int64(data.F1), field2: data.F2}); e != nil {
 		t.Error(e)
 	}
 }
@@ -136,7 +136,7 @@ func Test_GenerateInfluxPoint_Custom_Type(t *testing.T) {
 		t.Error(e)
 	}
 
-	if e := checkFilds(p, map[string]interface{}{field1: int64(data.F1), field2: data.F2}); e != nil {
+	if e := checkFields(p, map[string]interface{}{field1: int64(data.F1), field2: data.F2}); e != nil {
 		t.Error(e)
 	}
 }
@@ -198,7 +198,69 @@ func Test_GenerateInfluxPoint_Nested_Struct(t *testing.T) {
 		t.Error(e)
 	}
 
-	if e := checkFilds(p, map[string]interface{}{field1: int64(data.F1), field2: data.F}); e != nil {
+	if e := checkFields(p, map[string]interface{}{field1: int64(data.F1), field2: data.F}); e != nil {
+		t.Error(e)
+	}
+}
+
+func Test_GenerateInfluxPoint_Omitempty(t *testing.T) {
+	type Data struct {
+		Base      string    `influxqu:"measurement"`
+		T1        string    `influxqu:"tag,t1,omitempty"`
+		T2        string    `influxqu:"tag,t2,omitempty"`
+		T3        *string   `influxqu:"tag,t3,omitempty"`
+		F1        int       `influxqu:"field,f1,omitempty"`
+		F2        bool      `influxqu:"field,f2,omitempty"`
+		F3        int32     `influxqu:"field,f3,omitempty"`
+		F4        *float32  `influxqu:"field,f4,omitempty"`
+		Timestamp time.Time `influxqu:"timestamp"`
+	}
+
+	const (
+		tag1   = "t1"
+		field1 = "f1"
+	)
+
+	var (
+		emptyString          = ""
+		nilFloat32  *float32 = nil
+	)
+
+	g := NewinfluxQu()
+	data := Data{
+		Base:      "base",
+		T1:        "t1",
+		T2:        "",
+		T3:        &emptyString,
+		F1:        1,
+		F2:        false,
+		F3:        0,
+		F4:        nilFloat32,
+		Timestamp: time.Now(),
+	}
+
+	p, e := g.GenerateInfluxPoint(&data)
+	if e != nil {
+		t.Error(e)
+	}
+
+	if p == nil {
+		t.Error("point is nil")
+	}
+
+	if p.Name() != data.Base {
+		t.Error("point name is not base")
+	}
+
+	if p.Time() != data.Timestamp {
+		t.Error("point timestamp is not data.Timestamp")
+	}
+
+	if e := checkTags(p, map[string]string{tag1: data.T1}); e != nil {
+		t.Error(e)
+	}
+
+	if e := checkFields(p, map[string]interface{}{field1: int64(data.F1)}); e != nil {
 		t.Error(e)
 	}
 }

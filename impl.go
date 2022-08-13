@@ -17,6 +17,10 @@ type influxQu struct {
 	timestampKey   string
 }
 
+const (
+	omitemptyKey = "omitempty"
+)
+
 func mergeTags(org, src map[string]string) error {
 	for k, v := range src {
 		if _, ok := org[k]; ok {
@@ -41,37 +45,64 @@ func mergeFields(org, src map[string]interface{}) error {
 	return nil
 }
 
-func processTag(tgs []string, org map[string]string, val reflect.Value, i int) (err error) {
-	if len(tgs) < 2 {
+func processTag(tags []string, org map[string]string, val reflect.Value, i int) (err error) {
+	if len(tags) < 2 {
 		return &NoTagName{}
 	}
 
-	t := tgs[1]
+	isOmitempty := false
+
+	if len(tags) == 3 {
+		if tags[2] != omitemptyKey {
+			return &UnSupportedTag{}
+		}
+
+		isOmitempty = true
+	}
+
+	t := tags[1]
 
 	if _, ok := org[t]; ok {
 		return &DuplicatedTag{}
 	}
 
-	org[t], err = getFiledAsString(val, i)
+	v, err := getFiledAsString(val, i)
 	if err != nil {
 		return err
+	}
+
+	if !isOmitempty || v != "" {
+		org[t] = v
 	}
 
 	return nil
 }
 
-func processFields(tgs []string, org map[string]interface{}, val reflect.Value, i int) (err error) {
-	if len(tgs) < 2 {
+func processFields(tags []string, org map[string]interface{}, val reflect.Value, i int) (err error) {
+	if len(tags) < 2 {
 		return &NoFieldName{}
 	}
 
-	f := tgs[1]
+	isOmitempty := false
+
+	if len(tags) == 3 {
+		if tags[2] != omitemptyKey {
+			return &UnSupportedTag{}
+		}
+
+		isOmitempty = true
+	}
+
+	f := tags[1]
 
 	if _, ok := org[f]; ok {
 		return &DuplicatedField{}
 	}
 
-	org[f] = val.Field(i).Interface()
+	v := val.Field(i).Interface()
+	if !isOmitempty || !isValueEmpty(v) {
+		org[f] = v
+	}
 
 	return nil
 }
@@ -150,6 +181,10 @@ func (q *influxQu) getData(v interface{}, t reflect.Type) (
 		case q.measurementKey:
 			if measurement != "" {
 				return "", nil, nil, nil, &DuplicatedMeasurement{}
+			}
+
+			if len(tgs) != 1 {
+				return "", nil, nil, nil, &UnSupportedTag{}
 			}
 
 			measurement, err = getFiledAsString(val, i)
