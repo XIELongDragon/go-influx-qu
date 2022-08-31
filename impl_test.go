@@ -209,10 +209,12 @@ func Test_GenerateInfluxPoint_Omitempty(t *testing.T) {
 		T1        string    `influxqu:"tag,t1,omitempty"`
 		T2        string    `influxqu:"tag,t2,omitempty"`
 		T3        *string   `influxqu:"tag,t3,omitempty"`
+		T4        *string   `influxqu:"tag,t4,omitempty"`
 		F1        int       `influxqu:"field,f1,omitempty"`
 		F2        bool      `influxqu:"field,f2,omitempty"`
 		F3        int32     `influxqu:"field,f3,omitempty"`
 		F4        *float32  `influxqu:"field,f4,omitempty"`
+		F5        *int64    `influxqu:"field,f5,omitempty"`
 		Timestamp time.Time `influxqu:"timestamp"`
 	}
 
@@ -232,10 +234,12 @@ func Test_GenerateInfluxPoint_Omitempty(t *testing.T) {
 		T1:        "t1",
 		T2:        "",
 		T3:        &emptyString,
+		T4:        nil,
 		F1:        1,
 		F2:        false,
 		F3:        0,
 		F4:        nilFloat32,
+		F5:        nil,
 		Timestamp: time.Now(),
 	}
 

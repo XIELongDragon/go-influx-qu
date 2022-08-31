@@ -48,6 +48,10 @@ func getFiledAsString(val reflect.Value, i int) (string, error) {
 	f := val.Field(i)
 
 	if f.Kind() == reflect.Ptr {
+		if f.IsNil() {
+			return "", nil
+		}
+
 		f = f.Elem()
 	}
 
@@ -86,6 +90,10 @@ func getFiledAsTime(val reflect.Value, i int) (time.Time, error) {
 	f := val.Field(i)
 
 	if f.Kind() == reflect.Ptr {
+		if f.IsNil() {
+			return time.Time{}, &UnSupportedType{}
+		}
+
 		f = f.Elem()
 	}
 
