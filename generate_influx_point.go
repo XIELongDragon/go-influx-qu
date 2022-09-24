@@ -9,18 +9,6 @@ import (
 	"github.com/influxdata/influxdb-client-go/v2/api/write"
 )
 
-type influxQu struct {
-	key            string
-	measurementKey string
-	fieldKey       string
-	tagKey         string
-	timestampKey   string
-}
-
-const (
-	omitemptyKey = "omitempty"
-)
-
 func mergeTags(org, src map[string]string) error {
 	for k, v := range src {
 		if _, ok := org[k]; ok {

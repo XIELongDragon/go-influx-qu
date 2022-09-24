@@ -6,6 +6,19 @@ import (
 
 type InfluxQu interface {
 	GenerateInfluxPoint(val interface{}) (*write.Point, error)
+	GenerateFluxQuery(bucket, start, end string, val interface{}, suffix []string) (string, error)
+}
+
+const (
+	omitemptyKey = "omitempty"
+)
+
+type influxQu struct {
+	key            string
+	measurementKey string
+	fieldKey       string
+	tagKey         string
+	timestampKey   string
 }
 
 func NewinfluxQu() InfluxQu {
