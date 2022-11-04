@@ -11,7 +11,7 @@ A simple library converts structures to InfluxDB point and covert back from Infl
 
 ```go
 type Data struct {
-    Base      string    `influxqu:"measurement"`
+        Base      string    `influxqu:"measurement"`
 	T1        string    `influxqu:"tag,t1"`
 	T2        string    `influxqu:"tag,t2"`
 	F1        int       `influxqu:"field,f1"`
