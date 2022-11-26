@@ -44,7 +44,7 @@ func getTypeInfo(i interface{}, val reflect.Value) (reflect.Type, reflect.Kind) 
 	return t, valKind
 }
 
-func getFiledAsString(val reflect.Value, i int) (string, error) {
+func getFieldAsString(val reflect.Value, i int) (string, error) {
 	f := val.Field(i)
 
 	if f.Kind() == reflect.Ptr {
