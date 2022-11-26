@@ -7,12 +7,17 @@ import (
 
 func Test_GenerateFluxQuery(t *testing.T) {
 	type Data struct {
-		Base      string    `influxqu:"measurement"`
-		T1        string    `influxqu:"tag,t1"`
-		T2        string    `influxqu:"tag,t2,omitempty"`
-		F1        int       `influxqu:"field,f1"`
-		F2        bool      `influxqu:"field,f2"`
-		F3        string    `influxqu:"field,f3"`
+		Base string  `influxqu:"measurement"`
+		T1   string  `influxqu:"tag,t1"`
+		T2   string  `influxqu:"tag,t2,omitempty"`
+		T3   bool    `influxqu:"tag,t3,omitempty"`
+		T4   float32 `influxqu:"tag,t4,omitempty"`
+		T5   float64 `influxqu:"tag,t5,omitempty"`
+		T6   int     `influxqu:"tag,t6,omitempty"`
+		F1   int     `influxqu:"field,f1"`
+		F2   bool    `influxqu:"field,f2"`
+		F3   string  `influxqu:"field,f3"`
+
 		Timestamp time.Time `influxqu:"timestamp"`
 	}
 
@@ -20,14 +25,18 @@ func Test_GenerateFluxQuery(t *testing.T) {
 	data := Data{
 		Base:      "base",
 		T1:        "abc",
-		T2:        "",
+		T2:        "",    // zero value and should be omitted
+		T3:        false, // zero value and should be omitted
+		T4:        0,     // zero value and should be omitted
+		T5:        0,     // zero value and should be omitted
+		T6:        0,     // zero value and should be omitted
 		F1:        1,
 		F2:        true,
 		F3:        "",
 		Timestamp: time.Now(),
 	}
 
-	exptected := `from(bucket: "bucket")
+	expected := `from(bucket: "bucket")
  |> range(start: -1h)
  |> filter(fn: (r) => r["t1"] == "abc")
  |> filter(fn: (r) => r["_measurement"] == "base")
@@ -40,7 +49,7 @@ func Test_GenerateFluxQuery(t *testing.T) {
 		t.Error(err)
 	}
 
-	if q != exptected {
+	if q != expected {
 		t.Error("query is not expected")
 	}
 }

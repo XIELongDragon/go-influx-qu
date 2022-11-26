@@ -54,7 +54,13 @@ func processTag(tags []string, org map[string]string, val reflect.Value, i int) 
 		return &DuplicatedTag{}
 	}
 
-	v, err := getFiledAsString(val, i)
+	if val.IsValid() && val.Field(i).IsZero() {
+		if isOmitempty {
+			return nil
+		}
+	}
+
+	v, err := getFieldAsString(val, i)
 	if err != nil {
 		return err
 	}
@@ -175,7 +181,7 @@ func (q *influxQu) getData(v interface{}, t reflect.Type) (
 				return "", nil, nil, nil, &UnSupportedTag{}
 			}
 
-			measurement, err = getFiledAsString(val, i)
+			measurement, err = getFieldAsString(val, i)
 			if err != nil {
 				return "", nil, nil, nil, err
 			}
