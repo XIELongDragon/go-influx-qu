@@ -228,6 +228,14 @@ func (q *influxQu) GenerateInfluxPoint(v interface{}) (*write.Point, error) {
 		return nil, err
 	}
 
+	if m == "" {
+		return nil, &NoValidMeasurement{}
+	}
+
+	if len(f) == 0 {
+		return nil, &NoValidField{}
+	}
+
 	if tp == nil {
 		tm := time.Now()
 		tp = &tm

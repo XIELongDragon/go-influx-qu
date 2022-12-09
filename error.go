@@ -57,3 +57,15 @@ type UnSupportedTag struct{}
 func (e *UnSupportedTag) Error() string {
 	return "unsupported tag"
 }
+
+type NoValidMeasurement struct{}
+
+func (e *NoValidMeasurement) Error() string {
+	return "no valid measurement"
+}
+
+type NoValidField struct{}
+
+func (e *NoValidField) Error() string {
+	return "no valid field"
+}
