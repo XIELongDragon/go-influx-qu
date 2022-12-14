@@ -33,16 +33,16 @@ func mergeFields(org, src map[string]interface{}) error {
 	return nil
 }
 
-func processTag(tags []string, org map[string]string, val reflect.Value, i int) (err error) {
+func processTag(tags []string, org map[string]string, val reflect.Value, i int) (omiteTag string, err error) {
 	if len(tags) < 2 {
-		return &NoTagName{}
+		return "", &NoTagName{}
 	}
 
 	isOmitempty := false
 
 	if len(tags) == 3 {
 		if tags[2] != omitemptyKey {
-			return &UnSupportedTag{}
+			return "", &UnSupportedTag{}
 		}
 
 		isOmitempty = true
@@ -51,25 +51,25 @@ func processTag(tags []string, org map[string]string, val reflect.Value, i int) 
 	t := tags[1]
 
 	if _, ok := org[t]; ok {
-		return &DuplicatedTag{}
+		return "", &DuplicatedTag{}
 	}
 
 	if val.IsValid() && val.Field(i).IsZero() {
 		if isOmitempty {
-			return nil
+			return t, nil
 		}
 	}
 
 	v, err := getFieldAsString(val, i)
 	if err != nil {
-		return err
+		return "", err
 	}
 
 	if !isOmitempty || v != "" {
 		org[t] = v
 	}
 
-	return nil
+	return "", nil
 }
 
 func processFields(tags []string, org map[string]interface{}, val reflect.Value, i int) (err error) {
@@ -108,7 +108,7 @@ func (q *influxQu) processSubStruct(
 	tags map[string]string,
 	fields map[string]interface{},
 	timestamp *time.Time) error {
-	m, t, f, tp, e := q.getData(val, ty)
+	m, t, _, f, tp, e := q.getData(val, ty)
 	if e != nil {
 		return e
 	}
@@ -143,6 +143,7 @@ func (q *influxQu) processSubStruct(
 func (q *influxQu) getData(v interface{}, t reflect.Type) (
 	measurement string,
 	tags map[string]string,
+	omiteTags []string,
 	fields map[string]interface{},
 	timestamp *time.Time,
 	err error,
@@ -150,6 +151,7 @@ func (q *influxQu) getData(v interface{}, t reflect.Type) (
 	val := reflect.Indirect(reflect.ValueOf(v))
 	tags = make(map[string]string)
 	fields = make(map[string]interface{})
+	omiteTags = make([]string, 0)
 
 	n := t.NumField()
 	for i := 0; i < n; i++ {
@@ -157,7 +159,7 @@ func (q *influxQu) getData(v interface{}, t reflect.Type) (
 		if f.Anonymous && (f.Type.Kind() == reflect.Struct || f.Type.Kind() == reflect.Ptr) {
 			err = q.processSubStruct(val.Field(i).Interface(), f.Type, &measurement, tags, fields, timestamp)
 			if err != nil {
-				return "", nil, nil, nil, err
+				return "", nil, nil, nil, nil, err
 			}
 		}
 
@@ -174,45 +176,45 @@ func (q *influxQu) getData(v interface{}, t reflect.Type) (
 		switch tgs[0] {
 		case q.measurementKey:
 			if measurement != "" {
-				return "", nil, nil, nil, &DuplicatedMeasurement{}
+				return "", nil, nil, nil, nil, &DuplicatedMeasurement{}
 			}
 
 			if len(tgs) != 1 {
-				return "", nil, nil, nil, &UnSupportedTag{}
+				return "", nil, nil, nil, nil, &UnSupportedTag{}
 			}
 
 			measurement, err = getFieldAsString(val, i)
 			if err != nil {
-				return "", nil, nil, nil, err
+				return "", nil, nil, nil, nil, err
 			}
 		case q.tagKey:
-			err = processTag(tgs, tags, val, i)
+			_, err = processTag(tgs, tags, val, i)
 			if err != nil {
-				return "", nil, nil, nil, err
+				return "", nil, nil, nil, nil, err
 			}
 		case q.fieldKey:
 			err = processFields(tgs, fields, val, i)
 			if err != nil {
-				return "", nil, nil, nil, err
+				return "", nil, nil, nil, nil, err
 			}
 
 		case q.timestampKey:
 			if timestamp != nil {
-				return "", nil, nil, nil, &DuplicatedTimestamp{}
+				return "", nil, nil, nil, nil, &DuplicatedTimestamp{}
 			}
 
 			var tmp time.Time
 			tmp, err = getFiledAsTime(val, i)
 
 			if err != nil {
-				return "", nil, nil, nil, err
+				return "", nil, nil, nil, nil, err
 			}
 
 			timestamp = &tmp
 		}
 	}
 
-	return measurement, tags, fields, timestamp, nil
+	return measurement, tags, omiteTags, fields, timestamp, nil
 }
 
 func (q *influxQu) GenerateInfluxPoint(v interface{}) (*write.Point, error) {
@@ -223,7 +225,7 @@ func (q *influxQu) GenerateInfluxPoint(v interface{}) (*write.Point, error) {
 		return nil, &UnSupportedType{}
 	}
 
-	m, t, f, tp, err := q.getData(v, valType)
+	m, t, _, f, tp, err := q.getData(v, valType)
 	if err != nil {
 		return nil, err
 	}
