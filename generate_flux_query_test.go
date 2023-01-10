@@ -53,7 +53,7 @@ func Test_GenerateFluxQuery(t *testing.T) {
 		t.Errorf("query is not expected, got: %s, expected: %s", q, expected)
 	}
 
-	expectedCols := []string{"t1", "_measurement", "f1", "f2"}
+	expectedCols := []string{"t1", "_measurement", "f1", "f2", "t2", "t3", "t4", "t5", "t6"}
 
 	if len(cols) != len(expectedCols) {
 		t.Errorf("columns are not expected, got: %v, expected: %v", cols, expectedCols)

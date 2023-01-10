@@ -188,9 +188,12 @@ func (q *influxQu) getData(v interface{}, t reflect.Type) (
 				return "", nil, nil, nil, nil, err
 			}
 		case q.tagKey:
-			_, err = processTag(tgs, tags, val, i)
+			omiteTag, err := processTag(tgs, tags, val, i)
 			if err != nil {
 				return "", nil, nil, nil, nil, err
+			}
+			if omiteTag != "" {
+				omiteTags = append(omiteTags, omiteTag)
 			}
 		case q.fieldKey:
 			err = processFields(tgs, fields, val, i)
