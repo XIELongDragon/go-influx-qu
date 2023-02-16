@@ -6,8 +6,8 @@ func (q *influxQu) generateFluxQuery(
 	bucket, start, end string,
 	tags map[string]string,
 	fields []string,
-	suffixes []string) string {
-	var query string
+	suffixes []string,
+) (query string, cols []string) {
 	query = "from(bucket: \"" + bucket + "\")"
 
 	if start != "" && end != "" {
@@ -20,6 +20,7 @@ func (q *influxQu) generateFluxQuery(
 
 	for k, v := range tags {
 		query = query + "\n |> filter(fn: (r) => r[\"" + k + "\"] == \"" + v + "\")"
+		cols = append(cols, k)
 	}
 
 	m := ""
@@ -30,6 +31,7 @@ func (q *influxQu) generateFluxQuery(
 		}
 
 		m += "r[\"_field\"] == \"" + f + "\""
+		cols = append(cols, f)
 	}
 
 	if m != "" {
@@ -40,20 +42,22 @@ func (q *influxQu) generateFluxQuery(
 		query += "\n |> " + s
 	}
 
-	return query
+	return query, cols
 }
 
-func (q *influxQu) GenerateFluxQuery(bucket, start, end string, v interface{}, suffixes []string) (string, error) {
+func (q *influxQu) GenerateFluxQuery(
+	bucket, start, end string, v interface{}, suffixes []string,
+) (query string, cols []string, err error) {
 	val := reflect.Indirect(reflect.ValueOf(v))
 	valType, valKind := getTypeInfo(v, val)
 
 	if valKind != reflect.Struct {
-		return "", &UnSupportedType{}
+		return "", nil, &UnSupportedType{}
 	}
 
-	measurement, tags, f, _, err := q.getData(v, valType)
+	measurement, tags, omitTags, f, _, err := q.getData(v, valType)
 	if err != nil {
-		return "", err
+		return "", nil, err
 	}
 
 	if measurement != "" {
@@ -61,11 +65,15 @@ func (q *influxQu) GenerateFluxQuery(bucket, start, end string, v interface{}, s
 	}
 
 	fields := make([]string, 0, len(f))
+
 	for k, v := range f {
 		if !isValueEmpty(v) {
 			fields = append(fields, k)
 		}
 	}
 
-	return q.generateFluxQuery(bucket, start, end, tags, fields, suffixes), nil
+	query, cols = q.generateFluxQuery(bucket, start, end, tags, fields, suffixes)
+	cols = append(cols, omitTags...)
+
+	return query, cols, nil
 }

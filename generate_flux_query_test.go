@@ -44,12 +44,24 @@ func Test_GenerateFluxQuery(t *testing.T) {
  |> sort("_time")
  |> last()`
 
-	q, err := g.GenerateFluxQuery("bucket", "-1h", "", data, []string{"sort(\"_time\")", "last()"})
+	q, cols, err := g.GenerateFluxQuery("bucket", "-1h", "", data, []string{"sort(\"_time\")", "last()"})
 	if err != nil {
 		t.Error(err)
 	}
 
 	if q != expected {
-		t.Error("query is not expected")
+		t.Errorf("query is not expected, got: %s, expected: %s", q, expected)
+	}
+
+	expectedCols := []string{"t1", "_measurement", "f1", "f2", "t2", "t3", "t4", "t5", "t6"}
+
+	if len(cols) != len(expectedCols) {
+		t.Errorf("columns are not expected, got: %v, expected: %v", cols, expectedCols)
+	}
+
+	for i, col := range cols {
+		if col != expectedCols[i] {
+			t.Errorf("columns are not expected, got: %v, expected: %v", cols, expectedCols)
+		}
 	}
 }

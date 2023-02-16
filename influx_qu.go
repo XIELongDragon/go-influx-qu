@@ -6,7 +6,7 @@ import (
 
 type InfluxQu interface {
 	GenerateInfluxPoint(val interface{}) (*write.Point, error)
-	GenerateFluxQuery(bucket, start, end string, val interface{}, suffix []string) (string, error)
+	GenerateFluxQuery(bucket, start, end string, val interface{}, suffix []string) (query string, cols []string, err error)
 }
 
 const (
