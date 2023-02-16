@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/influxdata/influxdb-client-go/v2/api/write"
+	"github.com/shopspring/decimal"
 )
 
 func checkTags(p *write.Point, targets map[string]string) error {
@@ -318,6 +319,62 @@ func Test_GenerateInfluxPoint_Stringer(t *testing.T) {
 	}
 
 	if e := checkFields(p, map[string]interface{}{field1: int64(data.F1), field2: data.F2}); e != nil {
+		t.Error(e)
+	}
+}
+
+func Test_GenerateInfluxPoint_Using_Decimal(t *testing.T) {
+	type Data struct {
+		Base      string          `influxqu:"measurement"`
+		T1        string          `influxqu:"tag,t1"`
+		T2        string          `influxqu:"tag,t2"`
+		F1        int             `influxqu:"field,f1"`
+		F2        bool            `influxqu:"field,f2"`
+		F3        decimal.Decimal `influxqu:"field,f3"`
+		Timestamp time.Time       `influxqu:"timestamp"`
+	}
+
+	const (
+		tag1   = "t1"
+		tag2   = "t2"
+		field1 = "f1"
+		field2 = "f2"
+		field3 = "f3"
+	)
+
+	g := NewinfluxQu()
+	data := Data{
+		Base:      "base",
+		T1:        "t1",
+		T2:        "t2",
+		F1:        1,
+		F2:        true,
+		F3:        decimal.NewFromFloat(1.35),
+		Timestamp: time.Now(),
+	}
+
+	p, e := g.GenerateInfluxPoint(&data)
+	if e != nil {
+		t.Error(e)
+	}
+
+	if p == nil {
+		t.Error("point is nil")
+	}
+
+	if p.Name() != data.Base {
+		t.Error("point name is not base")
+	}
+
+	if p.Time() != data.Timestamp {
+		t.Error("point timestamp is not data.Timestamp")
+	}
+
+	if e := checkTags(p, map[string]string{tag1: data.T1, tag2: data.T2}); e != nil {
+		t.Error(e)
+	}
+
+	if e := checkFields(p, map[string]interface{}{field1: int64(data.F1), field2: data.F2, field3: data.F3.InexactFloat64()}); e != nil {
 		t.Error(e)
 	}
 }

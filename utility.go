@@ -86,7 +86,7 @@ func getFieldAsString(val reflect.Value, i int) (string, error) {
 	return "", &UnSupportedType{}
 }
 
-func getFiledAsTime(val reflect.Value, i int) (time.Time, error) {
+func getFieldAsTime(val reflect.Value, i int) (time.Time, error) {
 	f := val.Field(i)
 
 	if f.Kind() == reflect.Ptr {
