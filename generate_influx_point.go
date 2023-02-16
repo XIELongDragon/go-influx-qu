@@ -7,6 +7,12 @@ import (
 
 	influxdb2 "github.com/influxdata/influxdb-client-go/v2"
 	"github.com/influxdata/influxdb-client-go/v2/api/write"
+	"github.com/shopspring/decimal"
+)
+
+const (
+	decimalPkgPath    = "github.com/shopspring/decimal"
+	decimalStructName = "Decimal"
 )
 
 func mergeTags(org, src map[string]string) error {
@@ -95,7 +101,12 @@ func processFields(tags []string, org map[string]interface{}, val reflect.Value,
 
 	v := val.Field(i).Interface()
 	if !isOmitempty || !isValueEmpty(v) {
-		org[f] = v
+		// process decimal
+		if val.Field(i).Type().PkgPath() == decimalPkgPath && val.Field(i).Type().Name() == decimalStructName {
+			org[f] = v.(decimal.Decimal).InexactFloat64()
+		} else {
+			org[f] = v
+		}
 	}
 
 	return nil
@@ -207,7 +218,7 @@ func (q *influxQu) getData(v interface{}, t reflect.Type) (
 			}
 
 			var tmp time.Time
-			tmp, err = getFiledAsTime(val, i)
+			tmp, err = getFieldAsTime(val, i)
 
 			if err != nil {
 				return "", nil, nil, nil, nil, err
