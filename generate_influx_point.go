@@ -104,6 +104,9 @@ func processFields(tags []string, org map[string]interface{}, val reflect.Value,
 		// process decimal
 		if val.Field(i).Type().PkgPath() == decimalPkgPath && val.Field(i).Type().Name() == decimalStructName {
 			org[f] = v.(decimal.Decimal).InexactFloat64()
+		} else if val.Field(i).Kind() == reflect.Pointer {
+			underlyingVal := reflect.Indirect(val.Field(i))
+			org[f] = underlyingVal.Interface()
 		} else {
 			org[f] = v
 		}
