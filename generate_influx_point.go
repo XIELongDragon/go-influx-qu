@@ -137,7 +137,7 @@ func (q *influxQu) processSubStruct(
 			return &DuplicatedTimestamp{}
 		}
 
-		*timestamp = *tp
+		timestamp = tp
 	}
 
 	if err := mergeTags(tags, t); err != nil {
