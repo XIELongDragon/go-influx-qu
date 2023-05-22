@@ -15,6 +15,26 @@ const (
 	decimalStructName = "Decimal"
 )
 
+func mergeOmitTags(org, src []string) ([]string, error) {
+	tmp := map[string]struct{}{}
+
+	for _, t := range org {
+		tmp[t] = struct{}{}
+	}
+
+	for _, t := range src {
+		if _, ok := tmp[t]; ok {
+			return nil, &DuplicatedTag{}
+		}
+
+		tmp[t] = struct{}{}
+
+		org = append(org, t)
+	}
+
+	return org, nil
+}
+
 func mergeTags(org, src map[string]string) error {
 	for k, v := range src {
 		if _, ok := org[k]; ok {
@@ -120,9 +140,10 @@ func (q *influxQu) processSubStruct(
 	ty reflect.Type,
 	measurement *string,
 	tags map[string]string,
+	omiteTags *[]string,
 	fields map[string]interface{},
 	timestamp *time.Time) (*time.Time, error) {
-	m, t, _, f, tp, e := q.getData(val, ty)
+	m, t, o, f, tp, e := q.getData(val, ty)
 	if e != nil {
 		return nil, e
 	}
@@ -143,6 +164,10 @@ func (q *influxQu) processSubStruct(
 
 	if err := mergeTags(tags, t); err != nil {
 		return nil, err
+	}
+
+	if *omiteTags, e = mergeOmitTags(*omiteTags, o); e != nil {
+		return nil, e
 	}
 
 	if err := mergeFields(fields, f); err != nil {
@@ -169,7 +194,7 @@ func (q *influxQu) getData(v interface{}, t reflect.Type) (
 	for i := 0; i < n; i++ {
 		f := t.Field(i)
 		if f.Anonymous && (f.Type.Kind() == reflect.Struct || f.Type.Kind() == reflect.Ptr) {
-			timestamp, err = q.processSubStruct(val.Field(i).Interface(), f.Type, &measurement, tags, fields, timestamp)
+			timestamp, err = q.processSubStruct(val.Field(i).Interface(), f.Type, &measurement, tags, &omiteTags, fields, timestamp)
 			if err != nil {
 				return "", nil, nil, nil, nil, err
 			}
