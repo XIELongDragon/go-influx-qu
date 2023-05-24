@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"reflect"
 	"time"
+
+	"github.com/shopspring/decimal"
 )
 
 func isValueEmpty(val interface{}) bool {
@@ -14,6 +16,10 @@ func isValueEmpty(val interface{}) bool {
 
 	if reflect.TypeOf(val).Kind() == reflect.Ptr {
 		return reflect.ValueOf(val).IsNil()
+	}
+
+	if castVal, ok := val.(decimal.Decimal); ok {
+		return castVal.IsZero()
 	}
 
 	v := reflect.ValueOf(val)
