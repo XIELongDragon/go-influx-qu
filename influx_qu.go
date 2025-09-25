@@ -1,12 +1,14 @@
 package influxqu
 
 import (
+	"github.com/InfluxCommunity/influxdb3-go/v2/influxdb3"
 	"github.com/influxdata/influxdb-client-go/v2/api/write"
 )
 
 type InfluxQu interface {
-	GenerateInfluxPoint(val interface{}) (*write.Point, error)
-	GenerateFluxQuery(bucket, start, end string, val interface{}, suffix []string) (query string, cols []string, err error)
+	GenerateInfluxPoint(val any) (*write.Point, error)
+	GenerateInfluxPointV3(val any) (*influxdb3.Point, error)
+	GenerateFluxQuery(bucket, start, end string, val any, suffix []string) (query string, cols []string, err error)
 }
 
 const (

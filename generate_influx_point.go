@@ -5,6 +5,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/InfluxCommunity/influxdb3-go/v2/influxdb3"
 	influxdb2 "github.com/influxdata/influxdb-client-go/v2"
 	"github.com/influxdata/influxdb-client-go/v2/api/write"
 	"github.com/shopspring/decimal"
@@ -258,25 +259,31 @@ func (q *influxQu) getData(v interface{}, t reflect.Type) (
 	return measurement, tags, omiteTags, fields, timestamp, nil
 }
 
-func (q *influxQu) GenerateInfluxPoint(v interface{}) (*write.Point, error) {
+func (q *influxQu) generateCommonPointInfo(v any) (
+	measurement string,
+	tags map[string]string,
+	fields map[string]any,
+	timestamp time.Time,
+	err error,
+) {
 	val := reflect.Indirect(reflect.ValueOf(v))
 	valType, valKind := getTypeInfo(v, val)
 
 	if valKind != reflect.Struct {
-		return nil, &UnSupportedType{}
+		return "", nil, nil, time.Time{}, &UnSupportedType{}
 	}
 
 	m, t, _, f, tp, err := q.getData(v, valType)
 	if err != nil {
-		return nil, err
+		return "", nil, nil, time.Time{}, err
 	}
 
 	if m == "" {
-		return nil, &NoValidMeasurement{}
+		return "", nil, nil, time.Time{}, &NoValidMeasurement{}
 	}
 
 	if len(f) == 0 {
-		return nil, &NoValidField{}
+		return "", nil, nil, time.Time{}, &NoValidField{}
 	}
 
 	if tp == nil {
@@ -284,7 +291,23 @@ func (q *influxQu) GenerateInfluxPoint(v interface{}) (*write.Point, error) {
 		tp = &tm
 	}
 
-	return influxdb2.NewPoint(
-		m, t, f, *tp,
-	), nil
+	return m, t, f, *tp, nil
+}
+
+func (q *influxQu) GenerateInfluxPoint(v any) (*write.Point, error) {
+	m, t, f, tp, err := q.generateCommonPointInfo(v)
+	if err != nil {
+		return nil, err
+	}
+
+	return influxdb2.NewPoint(m, t, f, tp), nil
+}
+
+func (q *influxQu) GenerateInfluxPointV3(v any) (*influxdb3.Point, error) {
+	m, t, f, tp, err := q.generateCommonPointInfo(v)
+	if err != nil {
+		return nil, err
+	}
+
+	return influxdb3.NewPoint(m, t, f, tp), nil
 }
